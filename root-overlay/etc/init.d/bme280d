@@ -1,0 +1,22 @@
+#!/bin/bash
+
+NAME=bme280d
+[[ -f /etc/default/$NAME ]] && \
+	. /etc/default/$NAME
+
+case "$1" in
+	start)
+		rm -f /dev/shm/sem.i2c
+		c=""
+		for a in ${ADDR//,/ }; do
+			c="$c --address $a --json /tmp/bme280d-$a.json "
+		done
+		bme280d $c &
+		disown -a
+	;;
+	stop)
+		pkill $NAME
+	;;
+	*)
+		echo "Usage: $NAME start|stop"
+esac

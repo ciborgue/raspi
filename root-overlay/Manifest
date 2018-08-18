@@ -1,0 +1,105 @@
+# add/delete/change: action to perform
+# path:  no lead slash
+# user:  |
+# group: | obvious
+# mode:  |
+
+cp,boot/initrd
+cp,boot/config.txt
+cp,boot/cmdline.txt
+cp,boot/ssh.txt
+cp,usr/bin/cc1101d
+cp,usr/bin/bme280d
+cp,root/.vimrc
+cp,root/.tmux.conf
+cp,root/.bash_history
+chmod,root/.bash_history,0600
+rm,root/{.viminfo,.config}
+rm,/home/pi/.bash_history
+# git clone https://gist.github.com/a03dd5bb8f4ac6a4c7e69c28bacde1d3.git
+cp,etc/initramfs-tools/scripts/init-bottom/root-ro
+cp,etc/wpa_supplicant/wpa_supplicant.conf
+cp,etc/network/interfaces.d/eth0
+chmod,etc/initramfs-tools/scripts/init-bottom/root-ro,+x
+cp,etc/hostname
+cp,etc/hosts
+rm,etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service
+cp,etc/dnsmasq.d/eth0.conf
+cp,etc/rsyslog.d/bme280d.conf
+cp,etc/rsyslog.d/cc1101d.conf
+cp,etc/logrotate.d/ezgrow.logrotate
+cp,etc/ezgrow/ezgrow.json
+# make sure /tmp is empty
+rm,tmp
+mkdir,tmp
+chmod,tmp,1777
+mkdir,site
+# SSH server keys
+cp,etc/ssh/ssh_host_ecdsa_key
+chmod,etc/ssh/ssh_host_ecdsa_key,0400
+cp,etc/ssh/ssh_host_ecdsa_key.pub
+cp,etc/ssh/ssh_host_ed25519_key
+chmod,etc/ssh/ssh_host_ed25519_key,0400
+cp,etc/ssh/ssh_host_ed25519_key.pub
+cp,etc/ssh/ssh_host_rsa_key
+chmod,etc/ssh/ssh_host_rsa_key,0400
+cp,etc/ssh/ssh_host_rsa_key.pub
+# dhcp client: don't try to use wired
+cp,etc/dhcpcd.conf
+cp,etc/modules
+###
+cp,etc/init.d/ezgrow
+chmod,etc/init.d/ezgrow,+x
+ln,../init.d/ezgrow,etc/rc0.d/K01ezgrow
+ln,../init.d/ezgrow,etc/rc1.d/K01ezgrow
+ln,../init.d/ezgrow,etc/rc6.d/K01ezgrow
+ln,../init.d/ezgrow,etc/rc2.d/S01ezgrow
+ln,../init.d/ezgrow,etc/rc3.d/S01ezgrow
+ln,../init.d/ezgrow,etc/rc4.d/S01ezgrow
+ln,../init.d/ezgrow,etc/rc5.d/S01ezgrow
+###
+cp,etc/default/cc1101d
+cp,etc/init.d/cc1101d
+chmod,etc/init.d/cc1101d,+x
+ln,../init.d/cc1101d,etc/rc0.d/K01cc1101d
+ln,../init.d/cc1101d,etc/rc1.d/K01cc1101d
+ln,../init.d/cc1101d,etc/rc6.d/K01cc1101d
+ln,../init.d/cc1101d,etc/rc2.d/S01cc1101d
+ln,../init.d/cc1101d,etc/rc3.d/S01cc1101d
+ln,../init.d/cc1101d,etc/rc4.d/S01cc1101d
+ln,../init.d/cc1101d,etc/rc5.d/S01cc1101d
+###
+cp,etc/default/bme280d
+cp,etc/init.d/bme280d
+chmod,etc/init.d/bme280d,+x
+ln,../init.d/bme280d,etc/rc0.d/K01bme280d
+ln,../init.d/bme280d,etc/rc1.d/K01bme280d
+ln,../init.d/bme280d,etc/rc6.d/K01bme280d
+ln,../init.d/bme280d,etc/rc2.d/S01bme280d
+ln,../init.d/bme280d,etc/rc3.d/S01bme280d
+ln,../init.d/bme280d,etc/rc4.d/S01bme280d
+ln,../init.d/bme280d,etc/rc5.d/S01bme280d
+# crontab
+append,etc/crontab
+# main worker script
+cp,root/ezgrow.py
+# login key
+cp,root/.ssh/authorized_keys
+chmod,root/.ssh,0700
+chmod,root/.ssh/authorized_keys,0600
+# initramfs tools
+cp,etc/initramfs-tools/modules
+cp,etc/initramfs-tools/initramfs.conf
+# cleanup
+rm,root/.cache
+rm,etc/ca-certificates.conf.dpkg-old
+rm,etc/network/interfaces.dpkg-old
+rm,var/cache/debconf/{config.dat-old,templates.dat-old}
+rm,var/backups
+rm,var/log/{apt,debug,syslog,messages}
+rm,opt/vc/src
+rm,etc/resolv.conf{,.bak}
+rm,etc/ufw
+rm,etc/apparmor{,.d}
+rm,etc/{group-,shadow-,passwd-}
+rm,run/samba

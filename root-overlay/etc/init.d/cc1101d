@@ -1,0 +1,32 @@
+#!/bin/bash
+
+NAME=cc1101d
+[[ -f /etc/default/$NAME ]] && \
+	. /etc/default/$NAME
+
+case "$1" in
+	start)
+		gpio unexport $GDO2
+		gpio export $GDO2 in
+
+		if [[ -n "$GDO0" && "$GDO0" -ne 0 ]]; then
+			gpio unexport $GDO0
+			gpio export $GDO0 in
+		fi
+		sleep 3
+
+		# CC1101 communicates over SPI; make sure semaphore is not
+		# locked down by some previously failed sensor process
+		# NOTE: I can't use lockf/flock to lock the SPI because
+		# spidev0.0 and spidev0.1 are different and don't share the
+		# same lock.
+		rm -f /dev/shm/sem.spi
+		$NAME --gdo0 $GDO0 --gdo2 $GDO2 --jsonfile $JSON &
+		disown -a
+		;;
+	stop)
+		pkill $NAME
+		;;
+	*)
+		echo "Usage: $NAME start|stop"
+esac

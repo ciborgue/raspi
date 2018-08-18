@@ -1,0 +1,84 @@
+#!/bin/bash
+# vim: set ts=4 sw=4 sts=4 noet:
+# No '-e' due to the 'fsck' invocation
+
+### BEGIN INIT INFO
+# Provides:           ezgrow
+# Required-Start:     $syslog
+# Required-Stop:      $syslog
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description:  Growbox management.
+# Description:
+#  Startup for read-only system; checks for 'data' filesystem, mounts if
+#  present, mounts swap if present, starts sensors and finally runs tmux.
+### END INIT INFO
+
+export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+BASE='ezgrow'
+DESC='Growbox management'
+
+. /lib/lsb/init-functions
+
+# TODO: make it work on the first boot, when /site is not mounted yet
+for default in {,/site}/etc/default/$BASE; do
+	[ -s $default ] && . $default
+done
+
+case "$1" in
+	start)
+		log_begin_msg "Starting $DESC: $BASE"
+
+		# mount filesystems and swap space if present
+		# this can't be reliably done via the /etc/fstab
+		for x in site data swap; do
+			dev="/dev/disk/by-label/${x^^}" # ^^ is 'upcase'
+			[[ -h $dev ]] || continue
+			if [[ $x = 'swap' ]]; then
+				swapon $dev
+			else
+				options='ro'
+				[[ $x = 'data' ]] && options='rw,noatime'
+				fsck -p $dev
+				mkdir -p /$x
+				mount -o $options /${dev} /$x
+			fi
+		done
+
+		# if adding swap was succeeded extend root
+		[[ $(swapon -s | wc -l) -gt 0 ]] && \
+			mount -o remount,size=1536m tmpfs-root
+
+		for conf in cc1101d bme280d; do
+			systemctl start $conf
+		done
+
+		for s in {/root,/site/bin}; do
+			[[ -x $s/ezgrow.py ]] && script=$s/ezgrow.py
+		done
+
+		tmux start-server
+		tmux new-session -d -n 'console'
+		tmux new-window -d -n 'top' top -d 8
+		if [[ -n $script ]]; then
+			tmux new-window -d -n 'EzGrow' $script
+			tmux clock-mode -t 'EzGrow'
+			# NOTE: this make sense for debug only; on production watchdog
+			# is going to reset the system on failure
+			tmux set-window-option -t 'EzGrow' remain-on-exit
+		fi
+		
+		log_end_msg $?
+		;;
+	stop)
+		log_begin_msg "Stopping $DESC: $BASE"
+		echo 'Panic!' > /dev/watchdog0
+		log_end_msg $?
+		;;
+
+	*)
+		echo "Usage: service $BASE {start|stop}"
+		exit 1
+		;;
+esac

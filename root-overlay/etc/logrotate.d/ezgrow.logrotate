@@ -1,0 +1,15 @@
+/var/log/bme280d.log
+/var/log/cc1101d.log
+{
+        daily
+        rotate 60
+        missingok
+        notifempty
+        compress
+        compresscmd /usr/bin/xz
+        compressoptions -9e
+        dateext
+        lastaction
+                mv /var/log/*.xz /data
+        endscript
+}
