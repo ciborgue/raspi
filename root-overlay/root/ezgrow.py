@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import re
 import json
+import pyaml
 import smtplib
 import time
-import datetime
+from datetime import date
+from datetime import datetime
 import tempfile
 from deepmerge import Merger
 from subprocess import getstatusoutput
@@ -73,7 +75,7 @@ class EZGrow():
 		assert(not status), 'Failed to run snmpset'
 		return self.snmp_get(oid)
 
-	def avg(self): # return [min. max, avg]
+	def avg(self): # return [min, max, avg]
 		value, count = [ float('inf'), float('-inf'), 0.0 ], 0.0
 		for inside in self.conf['inside-temperature']:
 			for sensor in filter(lambda x: x.startswith(inside), self.conf['tempdata']):
@@ -105,12 +107,26 @@ class EZGrow():
 				or self._any_high('water-high'))
 
 	def get_lamp(self):
-		mode = self.conf['time']['mode'] # grow or bloom
-		return self.conf['timestamp'].hour < self.conf['time'][mode]['off'] \
-				or self.conf['timestamp'].hour > self.conf['time'][mode]['on']
+		tm = datetime.strptime(self.conf['timestamp'].strftime('%H:%M'), '%H:%M')
+		t = self.conf['time'][self.conf['time']['mode']] # { 'on': ..., 'off': ... }
+		return not ((tm > datetime.strptime(t['off'], '%H:%M')) \
+				and (tm < datetime.strptime(t['on'], '%H:%M')))
+
+	def get_ozone(self):
+		# TODO use holiday module and make sure don't turn on ozone
+		if self.conf['timestamp'].strftime('%a') in ['Sat', 'Sun']:
+			return False
+		h = int(self.conf['timestamp'].strftime('%H'))
+		m = int(self.conf['timestamp'].strftime('%M'))
+		# 1000 to 1100 and 10 minutes every hour until 1800
+		if h == 10 or (h > 8 and h < 19 and m < 15):
+			return True
+		return False
 
 	def get_fan_ext(self):
-		avg = self.avg()[2]
+		avg = self.avg()[1]  # get maximum value
+		if avg in [float('inf'), float('-inf')]:
+			return True  # safety net; turn on if no sensors
 		fan = self.conf['snmpdata']['fan-ext']
 		if fan:
 			# fan is on now
@@ -132,7 +148,7 @@ class EZGrow():
 
 		while True:
 			# used for system schedulig (lamps, etc.)
-			self.conf['timestamp'] = datetime.datetime.now()
+			self.conf['timestamp'] = datetime.now()
 
 			self.update_watchdog()
 			self.conf['gpiodata'] = self.reload_gpio()
@@ -149,9 +165,10 @@ class EZGrow():
 					'pump': self.get_pump(), # this only depend on sensors
 					'fan-ext': self.get_fan_ext(),
 					'fan-int': True, # TODO some logic
-					#'lamp-aux': False, # TODO
+					'ozone': self.get_ozone(),
 					}
 
+			print(self.conf['update'])
 			for outlet in self.conf['update'].items():
 				self.update_watchdog()
 				if outlet[1] == self.conf['snmpdata'][outlet[0]]:
@@ -160,11 +177,11 @@ class EZGrow():
 				value = self.conf['snmp']['value']['on' if outlet[1] else 'off']
 				self.snmp_set(oid, 'i', value)
 
-			tm = datetime.datetime.now() # update timestamp
-			self.conf['timestamp'] = '%s' % tm # is not JSON serializable
+			tm = datetime.now() # update timestamp
+			self.conf['timestamp'] = tm # '%s' % tm # is not JSON serializable
 
-			with open(tempfile.gettempdir() + '/status.json', 'w') as s:
-				json.dump(self.conf, s, indent=4, sort_keys=True)
+			with open(tempfile.gettempdir() + '/status.yaml', 'w') as s:
+				pyaml.dump(self.conf, s) # , indent=4, sort_keys=True)
 			time.sleep(self.conf['sleep'] - tm.second % self.conf['sleep'])
 
 EZGrow().run()

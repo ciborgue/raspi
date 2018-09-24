@@ -43,8 +43,10 @@ apt -y install \\
 	busybox \\
 	python3-pip \\
 	minicom
-pip3 install deepmerge pyaml
-apt -y purge dphys-swapfile nano
+pip3 install deepmerge pyaml holidays
+apt -y purge dphys-swapfile nano dmidecode \\
+	gcc-4.{6,7,8,9}-base gcc-5-base \\
+	perl wget python2.7 build-essential
 #apt -y purge info man-db manpages build-essential \\
 #	dpkg-dev libc-dev-bin libc6-dev libfreetype6-dev \\
 #	libgcc-6-dev libmnl-dev libpng-dev libraspberrypi-dev \\
@@ -53,6 +55,7 @@ apt -y purge dphys-swapfile nano
 #	dosfstools groff-base gcc-4.{6,7,8,9}-base gcc-5-base \\
 #	nano ncdu nfs-common perl wget
 apt -y purge --auto-remove
+find / -name __pycache__ | xargs rm -rf
 EOF
 umount /mnt
 

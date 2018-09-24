@@ -58,5 +58,5 @@ dtparam=spi=on
 
 ### Overlay root FS ###########################################################
 initramfs initrd followkernel
-ramfsfile=initrd
+ramfsfile=initrd.img
 ramfsaddr=-1

@@ -47,10 +47,10 @@ flags=$(pFlags $dst_image 1); mount -o $flags $dst_image $dst/boot
 tar cCf $src/boot - . | tar xSCf $dst/boot -
 
 ed -s $dst/etc/fstab <<EOF
-/-01[[:space:]]/s/defaults/defaults,ro/
+/-01[[:space:]]/s/defaults/ro/
 g/^PARTUUID=/s!^.*-0\([[:digit:]]\)[[:space:]]\{1,\}!/dev/mmcblk0p\1	!
 \$a
-#tmpfs	/tmp	tmpfs	nosuid,nodev	0 0
+tmpfs	/tmp	tmpfs	nosuid,nodev	0 0
 .
 w
 EOF

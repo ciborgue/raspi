@@ -4,10 +4,8 @@
 # group: | obvious
 # mode:  |
 
-cp,boot/initrd
 cp,boot/config.txt
 cp,boot/cmdline.txt
-cp,boot/ssh.txt
 cp,usr/bin/cc1101d
 cp,usr/bin/bme280d
 cp,root/.vimrc
@@ -46,6 +44,8 @@ chmod,etc/ssh/ssh_host_rsa_key,0400
 cp,etc/ssh/ssh_host_rsa_key.pub
 # dhcp client: don't try to use wired
 cp,etc/dhcpcd.conf
+# avahi fine-tuning; cosmetics
+cp,etc/avahi/avahi-daemon.conf
 cp,etc/modules
 ###
 cp,etc/init.d/ezgrow
@@ -81,6 +81,7 @@ ln,../init.d/bme280d,etc/rc4.d/S01bme280d
 ln,../init.d/bme280d,etc/rc5.d/S01bme280d
 # crontab
 append,etc/crontab
+cp,etc/cron.hourly/logrotate
 # main worker script
 cp,root/ezgrow.py
 # login key
